@@ -4,25 +4,20 @@ import readline from "readline";
 import { transcribeAudio } from "./transcriber.js";
 import micConfig from "./micConfig.js";
 
-// var micInstance = mic({
-//   rate: "16000",
-//   channels: "1",
-//   debug: true,
-//   exitOnSilence: 6,
-//   fileType: "wav",
-// });
-
 var micInstance = mic(micConfig);
-
 var outputFileStream = fs.createWriteStream("output.wav");
 var micInputStream = micInstance.getAudioStream();
 
 micInputStream.on("data", function (data) {
-  console.log("Recibiendo flujo de entrada: " + data.length);
+  console.log(`Grabando... [${data.length} bytes recibidos]`);
 });
 
 micInputStream.pipe(outputFileStream);
+
+console.log("Iniciando grabación... Habla y presiona ENTER para finalizar.");
+
 micInstance.start();
+
 console.log("Grabando... Presiona ENTER para detener.");
 
 const rl = readline.createInterface({
@@ -32,36 +27,15 @@ const rl = readline.createInterface({
 
 rl.on("line", input => {
   micInstance.stop();
-  console.log("Grabación detenida.");
+  console.log("Finalizando grabación, procesando audio...");
+
   transcribeAudio("output.wav")
     .then(transcription => {
-      console.log("Transcripción: ", transcription);
+      console.log("\n");
+      console.log(transcription);
     })
     .catch(err => {
-      console.error("Error en la transcripción: ", err);
+      console.error("Error al transcribir: ", err.message);
     });
   rl.close();
 });
-
-// // cree esta funcion nueva
-// function transcribeAudio(segmentPath) {
-//   // let data = new FormData();
-//   let data = new FormDataNew();
-//   data.append("file", fs.createReadStream(segmentPath));
-//   data.append("model", "whisper-1");
-//   const config = {
-//     headers: {
-//       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-//       ...data.getHeaders(),
-//     },
-//   };
-//   return axios
-//     .post("https://api.openai.com/v1/audio/transcriptions", data, config)
-//     .then(response => {
-//       console.log(response.data.text);
-
-//       exec(`echo ${response.data.text} | pbcopy`);
-//       return response.data.text;
-//     })
-//     .finally(() => fs.unlink(segmentPath, console.error));
-// }

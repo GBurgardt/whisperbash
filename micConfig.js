@@ -1,8 +1,7 @@
-// En micConfig.js
 const micConfig = {
   rate: "16000",
   channels: "1",
-  debug: true,
+  debug: false,
   exitOnSilence: 6,
   fileType: "wav",
 };
