@@ -75,6 +75,35 @@ console.clear();
 //   process.stdout.write(`Intensidad: ${emoji} `);
 // });
 
+// micInputStream.on("data", function (data) {
+//   let audioBuffer = new Int16Array(
+//     data.buffer,
+//     data.byteOffset,
+//     data.byteLength / Int16Array.BYTES_PER_ELEMENT
+//   );
+
+//   let sum = 0;
+//   for (let i = 0; i < audioBuffer.length; i++) {
+//     // sum += Math.abs(audioBuffer[i]);
+//     sum += Math.abs(audioBuffer[i]) * 10;
+//   }
+//   let average = sum / audioBuffer.length;
+
+//   let maxAmplitude = 32768;
+//   let intensity = (average / maxAmplitude) * 300;
+//   intensity = intensity - 6;
+
+//   // Patrón que se expande y contrae según la intensidad
+//   let pattern = "";
+//   for (let i = 0; i < intensity; i++) {
+//     pattern += "• ";
+//   }
+
+//   readline.cursorTo(process.stdout, 0);
+//   readline.clearLine(process.stdout, 0); // Limpia la línea antes de escribir la nueva salida
+//   process.stdout.write(chalk.blue(`${pattern}`) + "\n");
+// });
+
 micInputStream.on("data", function (data) {
   let audioBuffer = new Int16Array(
     data.buffer,
@@ -84,24 +113,24 @@ micInputStream.on("data", function (data) {
 
   let sum = 0;
   for (let i = 0; i < audioBuffer.length; i++) {
-    // sum += Math.abs(audioBuffer[i]);
     sum += Math.abs(audioBuffer[i]) * 10;
   }
   let average = sum / audioBuffer.length;
 
   let maxAmplitude = 32768;
-  let intensity = (average / maxAmplitude) * 300;
-  intensity = intensity - 6;
+  let intensity = (average / maxAmplitude) * 75; // Ajustar la intensidad a la mitad de la consola
+  intensity = Math.min(intensity, 75); // Asegurarse de que no sobrepase la mitad de la consola
 
-  // Patrón que se expande y contrae según la intensidad
-  let pattern = "";
-  for (let i = 0; i < intensity; i++) {
-    pattern += "• ";
-  }
+  // Patrón que se expande y contrae según la intensidad, centrado
+  let leftPattern = "• ".repeat(intensity).padStart(75, " ");
+  let rightPattern = "• ".repeat(intensity).padEnd(75, " ");
 
   readline.cursorTo(process.stdout, 0);
   readline.clearLine(process.stdout, 0); // Limpia la línea antes de escribir la nueva salida
-  process.stdout.write(chalk.blue(`${pattern}`) + "\n");
+  // Combina los patrones con colores diferentes para el efecto de espejo
+  process.stdout.write(
+    chalk.blue(leftPattern) + chalk.red(rightPattern) + "\n"
+  );
 });
 
 micInputStream.pipe(outputFileStream);
