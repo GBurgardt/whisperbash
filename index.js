@@ -14,6 +14,67 @@ var isRecordingFinished = false;
 
 console.clear();
 
+// // barra de progreso
+// micInputStream.on("data", function (data) {
+//   let audioBuffer = new Int16Array(
+//     data.buffer,
+//     data.byteOffset,
+//     data.byteLength / Int16Array.BYTES_PER_ELEMENT
+//   );
+
+//   let sum = 0;
+//   for (let i = 0; i < audioBuffer.length; i++) {
+//     sum += Math.abs(audioBuffer[i]);
+//   }
+//   let average = sum / audioBuffer.length;
+
+//   let maxAmplitude = 32768;
+//   let intensity = (average / maxAmplitude) * 200;
+
+//   // Usar un gradiente de color según la intensidad
+//   let color = intensity > 15 ? "red" : intensity > 7 ? "yellow" : "green";
+//   let intensityBarFilled = chalk[color]("█").repeat(intensity);
+//   let intensityBarEmpty = chalk.grey("▁").repeat(23 - intensity);
+
+//   readline.cursorTo(process.stdout, 0);
+//   process.stdout.write(
+//     `Intensidad: [${intensityBarFilled}${intensityBarEmpty}] `
+//   );
+// });
+
+// // parlante
+// micInputStream.on("data", function (data) {
+//   let audioBuffer = new Int16Array(
+//     data.buffer,
+//     data.byteOffset,
+//     data.byteLength / Int16Array.BYTES_PER_ELEMENT
+//   );
+
+//   let sum = 0;
+//   for (let i = 0; i < audioBuffer.length; i++) {
+//     sum += Math.abs(audioBuffer[i]);
+//   }
+//   let average = sum / audioBuffer.length;
+
+//   let maxAmplitude = 32768;
+//   let intensity = (average / maxAmplitude) * 100;
+
+//   // Asignar un emoji según la intensidad del sonido
+//   let emoji;
+//   if (intensity < 10) {
+//     emoji = "🔈"; // Volumen bajo
+//   } else if (intensity < 30) {
+//     emoji = "🔉"; // Volumen medio
+//   } else if (intensity < 50) {
+//     emoji = "🔊"; // Volumen alto
+//   } else {
+//     emoji = "💥"; // Volumen muy alto
+//   }
+
+//   readline.cursorTo(process.stdout, 0);
+//   process.stdout.write(`Intensidad: ${emoji} `);
+// });
+
 micInputStream.on("data", function (data) {
   let audioBuffer = new Int16Array(
     data.buffer,
@@ -23,18 +84,23 @@ micInputStream.on("data", function (data) {
 
   let sum = 0;
   for (let i = 0; i < audioBuffer.length; i++) {
-    sum += Math.abs(audioBuffer[i]);
+    // sum += Math.abs(audioBuffer[i]);
+    sum += Math.abs(audioBuffer[i]) * 3;
   }
   let average = sum / audioBuffer.length;
 
   let maxAmplitude = 32768;
-  let intensity = (average / maxAmplitude) * 100; // Asegúrate de que este valor es <= 10
+  let intensity = (average / maxAmplitude) * 300;
 
-  let intensityBarFilled = chalk.green("█").repeat(intensity);
-  let intensityBarEmpty = chalk.grey("▁").repeat(23 - intensity);
+  // Patrón que se expande y contrae según la intensidad
+  let pattern = "";
+  for (let i = 0; i < intensity; i++) {
+    pattern += "• ";
+  }
 
   readline.cursorTo(process.stdout, 0);
-  process.stdout.write(`[${intensityBarFilled}${intensityBarEmpty}] `);
+  readline.clearLine(process.stdout, 0); // Limpia la línea antes de escribir la nueva salida
+  process.stdout.write(chalk.blue(`${pattern}`) + "\n");
 });
 
 micInputStream.pipe(outputFileStream);
