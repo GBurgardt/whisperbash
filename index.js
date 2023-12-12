@@ -41,7 +41,7 @@ micInputStream.on("data", function (data) {
   readline.clearLine(process.stdout, 0); // Limpia la línea antes de escribir la nueva salida
 
   // Calcula los segundos transcurridos desde que se inició la grabación
-  const spaceBetwen = 80 - pattern.length;
+  const spaceBetwen = 130 - pattern.length;
   let secondsElapsed = ((Date.now() - startTime) / 1000)
     .toFixed(2)
     .padStart(spaceBetwen, " ");
