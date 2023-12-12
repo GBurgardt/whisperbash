@@ -4,9 +4,9 @@ A bash command to record audio and transcribe it
 
 # Installation
 ```
-1. npx whisper-node download
+npx whisper-node download
 
-2. yarn
+yarn
 ```
 
 # Usage
@@ -15,7 +15,7 @@ node index.js
 ```
 
 # Example
-![whisperbash](https://user-images.githubusercontent.com/14052885/120076720-8c6f0d00-c06e-11eb-9a4b-2b4b8b6d0e6c.gif)
+<img width="959" alt="image" src="https://github.com/GBurgardt/whisperbash/assets/22543478/9636d4ed-7369-4751-bf33-91eefc923089">
 
 # License
 MIT
