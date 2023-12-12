@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import mic from "mic";
 import fs from "fs";
 import readline from "readline";
@@ -7,13 +8,12 @@ import chalk from "chalk";
 import ora from "ora";
 import * as emoji from "node-emoji";
 
-var micInstance = mic(micConfig);
-var outputFileStream = fs.createWriteStream("output.wav");
-var micInputStream = micInstance.getAudioStream();
-var isRecordingFinished = false;
+let micInstance = mic(micConfig);
+let outputFileStream = fs.createWriteStream("output.wav");
+let micInputStream = micInstance.getAudioStream();
+let isRecordingFinished = false;
 
-// Inicia un contador de tiempo
-var startTime = Date.now();
+let startTime = Date.now();
 
 console.clear();
 
@@ -46,7 +46,6 @@ micInputStream.on("data", function (data) {
     .toFixed(2)
     .padStart(spaceBetwen, " ");
 
-  // Escribe solo el patrón de puntos rojos y los segundos transcurridos al final
   process.stdout.write(
     chalk.red(pattern) + " " + chalk.white(secondsElapsed + "s\n")
   );
@@ -70,41 +69,56 @@ rl.on("line", () => {
   console.log("\n");
   const spinner = ora("Processing...").start();
   isRecordingFinished = true;
-  tryTranscribe();
-  rl.close();
+
+  tryTranscribe()
+    .then(() => {
+      spinner.stop();
+
+      process.exit(0);
+    })
+    .catch(err => {
+      spinner.stop();
+      console.error(chalk.red("Error during transcription: "), err);
+
+      process.exit(1);
+    });
 });
 
 function tryTranscribe() {
-  if (!isRecordingFinished) {
-    console.log(
-      chalk.magenta("La grabación aún no ha terminado. Esperando...")
-    );
-    setTimeout(tryTranscribe, 1000);
-    return;
-  }
+  return new Promise((resolve, reject) => {
+    if (!isRecordingFinished) {
+      console.log(
+        chalk.magenta("La grabación aún no ha terminado. Esperando...")
+      );
+      setTimeout(tryTranscribe, 1000);
+      return;
+    }
 
-  transcribeAudio("output.wav")
-    .then(transcription => {
-      console.log("\n");
-      console.log(chalk.cyan(transcription));
-      console.log("\n");
-      console.log("\n");
+    transcribeAudio("output.wav")
+      .then(transcription => {
+        console.log("\n");
+        console.log(chalk.cyan(transcription));
+        console.log("\n");
+        console.log("\n");
 
-      console.log(chalk.green("Transcription copied to clipboard"));
-    })
-    .catch(err => {
-      if (err.code === "ENOENT") {
-        console.error(
-          chalk.red(
-            "Error al transcribir: El archivo no existe. Verifique que la grabación haya terminado."
-          )
-        );
-      } else {
-        console.error(
-          chalk.red("Error al transcribir: " + emoji.get("x"), err.message)
-        );
-        console.log(chalk.yellow("Reintentando transcripción..."));
-        setTimeout(tryTranscribe, 1000);
-      }
-    });
+        console.log(chalk.green("Transcription copied to clipboard"));
+        resolve();
+      })
+      .catch(err => {
+        if (err.code === "ENOENT") {
+          console.error(
+            chalk.red(
+              "Error al transcribir: El archivo no existe. Verifique que la grabación haya terminado."
+            )
+          );
+        } else {
+          console.error(
+            chalk.red("Error al transcribir: " + emoji.get("x"), err.message)
+          );
+          console.log(chalk.yellow("Reintentando transcripción..."));
+          setTimeout(tryTranscribe, 1000);
+        }
+        reject(err);
+      });
+  });
 }
