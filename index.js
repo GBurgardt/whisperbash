@@ -31,8 +31,8 @@ micInputStream.on("data", function (data) {
   let average = sum / audioBuffer.length;
 
   let maxAmplitude = 32768;
-  let intensity = (average / maxAmplitude) * 300; // Ajustar la intensidad para que sea menor y comience desde el extremo
-  intensity = Math.min(intensity, 50); // Asegurarse de que no sobrepase el nuevo límite establecido
+  let intensity = (average / maxAmplitude) * 300;
+  intensity = Math.min(intensity, 50);
 
   let pattern = "• ".repeat(intensity).padStart(0, " ");
 
@@ -64,7 +64,6 @@ rl.on("line", () => {
 
   tryTranscribe()
     .then(() => {
-      // Asegúrate de detener aquí también cualquier otra animación o intervalo que pueda estar corriendo
       process.exit(0);
     })
     .catch(err => {
@@ -75,8 +74,6 @@ rl.on("line", () => {
       process.exit(1);
     });
 });
-
-let isSpinnerActive = false; // Añadir esta línea al principio del script
 
 function tryTranscribe() {
   console.log("\n");
@@ -90,34 +87,14 @@ function tryTranscribe() {
         console.log("\n");
         console.log(chalk.cyan(transcription));
         console.log("\n");
-        console.log("\n");
 
         console.log(chalk.green("Transcription copied to clipboard"));
 
-        console.log(chalk.green("Seleccione una opción:"));
-        console.log("1. Función A");
-        console.log("2. Función B");
-
-        const rl = readline.createInterface({
-          input: process.stdin,
-          output: process.stdout,
-        });
-
-        rl.question("Ingrese su elección (1 o 2): ", answer => {
-          if (answer === "1") {
-            functionA();
-          } else if (answer === "2") {
-            functionB();
-          } else {
-            console.log(chalk.red("Selección no válida."));
-          }
-          rl.close();
-          resolve();
-        });
+        rl.close();
+        resolve();
       })
       .catch(err => {
         if (err.code === "ENOENT" && isRecordingFinished) {
-          // Reintento solo si la grabación ha terminado
           setTimeout(tryTranscribe, 1000);
         } else if (err.code === "ENOENT") {
           console.error(
@@ -135,14 +112,4 @@ function tryTranscribe() {
         reject(err);
       });
   });
-}
-
-function functionA() {
-  // Aquí va la lógica para la Función A
-  console.log("Ejecutando Función A...");
-}
-
-function functionB() {
-  // Aquí va la lógica para la Función B
-  console.log("Ejecutando Función B...");
 }
