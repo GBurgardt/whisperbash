@@ -85,12 +85,13 @@ micInputStream.on("data", function (data) {
   let sum = 0;
   for (let i = 0; i < audioBuffer.length; i++) {
     // sum += Math.abs(audioBuffer[i]);
-    sum += Math.abs(audioBuffer[i]) * 3;
+    sum += Math.abs(audioBuffer[i]) * 10;
   }
   let average = sum / audioBuffer.length;
 
   let maxAmplitude = 32768;
   let intensity = (average / maxAmplitude) * 300;
+  intensity = intensity - 6;
 
   // Patrón que se expande y contrae según la intensidad
   let pattern = "";
