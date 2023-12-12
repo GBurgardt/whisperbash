@@ -12,32 +12,37 @@ var outputFileStream = fs.createWriteStream("output.wav");
 var micInputStream = micInstance.getAudioStream();
 var isRecordingFinished = false;
 
+console.clear();
+
 micInputStream.on("data", function (data) {
-  console.log(
-    chalk.blue(
-      `Grabando... ${emoji.get("microphone")} [${data.length} bytes recibidos]`
-    )
+  let audioBuffer = new Int16Array(
+    data.buffer,
+    data.byteOffset,
+    data.byteLength / Int16Array.BYTES_PER_ELEMENT
   );
+
+  let sum = 0;
+  for (let i = 0; i < audioBuffer.length; i++) {
+    sum += Math.abs(audioBuffer[i]);
+  }
+  let average = sum / audioBuffer.length;
+
+  let maxAmplitude = 32768;
+  let intensity = (average / maxAmplitude) * 100; // Asegúrate de que este valor es <= 10
+
+  let intensityBarFilled = chalk.green("█").repeat(intensity);
+  let intensityBarEmpty = chalk.grey("▁").repeat(23 - intensity);
+
+  readline.cursorTo(process.stdout, 0);
+  process.stdout.write(`[${intensityBarFilled}${intensityBarEmpty}] `);
 });
 
 micInputStream.pipe(outputFileStream);
 
-console.log(
-  chalk.green("Iniciando grabación... " + emoji.get("arrow_forward"))
-);
+console.log(chalk.green("Recording... " + emoji.get("arrow_forward")));
 
-const recordingSpinner = ora({
-  text: "Grabando... Presiona ENTER para detener.",
-  color: "yellow",
-  spinner: "dots",
-});
-
+console.log("\n");
 micInstance.start();
-recordingSpinner.start();
-
-micInstance.start();
-
-console.log("Grabando... Presiona ENTER para detener.");
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -47,7 +52,8 @@ const rl = readline.createInterface({
 rl.on("line", () => {
   micInstance.stop();
   outputFileStream.end();
-  recordingSpinner.succeed("Finalizando grabación, procesando audio...");
+  console.log("\n");
+  const spinner = ora("Processing...").start();
   isRecordingFinished = true;
   tryTranscribe();
   rl.close();
@@ -66,6 +72,10 @@ function tryTranscribe() {
     .then(transcription => {
       console.log("\n");
       console.log(chalk.cyan(transcription));
+      console.log("\n");
+      console.log("\n");
+
+      console.log(chalk.green("Transcription copied to clipboard"));
     })
     .catch(err => {
       if (err.code === "ENOENT") {
@@ -79,7 +89,6 @@ function tryTranscribe() {
           chalk.red("Error al transcribir: " + emoji.get("x"), err.message)
         );
         console.log(chalk.yellow("Reintentando transcripción..."));
-        // setTimeout(tryTranscribe, 5000);
         setTimeout(tryTranscribe, 1000);
       }
     });
