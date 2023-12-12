@@ -34,13 +34,8 @@ micInputStream.on("data", function (data) {
   let intensity = (average / maxAmplitude) * 300; // Ajustar la intensidad para que sea menor y comience desde el extremo
   intensity = Math.min(intensity, 50); // Asegurarse de que no sobrepase el nuevo límite establecido
 
-  // Patrón que se expande hacia un lado según la intensidad
   let pattern = "• ".repeat(intensity).padStart(0, " ");
 
-  readline.cursorTo(process.stdout, 0);
-  readline.clearLine(process.stdout, 0); // Limpia la línea antes de escribir la nueva salida
-
-  // Calcula los segundos transcurridos desde que se inició la grabación
   const spaceBetwen = 130 - pattern.length;
   let secondsElapsed = ((Date.now() - startTime) / 1000)
     .toFixed(2)
@@ -66,46 +61,65 @@ const rl = readline.createInterface({
 rl.on("line", () => {
   micInstance.stop();
   outputFileStream.end();
-  console.log("\n");
-  const spinner = ora("Processing...").start();
-  isRecordingFinished = true;
 
   tryTranscribe()
     .then(() => {
-      spinner.stop();
-
+      // Asegúrate de detener aquí también cualquier otra animación o intervalo que pueda estar corriendo
       process.exit(0);
     })
     .catch(err => {
-      spinner.stop();
       console.error(chalk.red("Error during transcription: "), err);
-
+      if (!isRecordingFinished) {
+        setTimeout(tryTranscribe, 1000);
+      }
       process.exit(1);
     });
 });
 
-function tryTranscribe() {
-  return new Promise((resolve, reject) => {
-    if (!isRecordingFinished) {
-      console.log(
-        chalk.magenta("La grabación aún no ha terminado. Esperando...")
-      );
-      setTimeout(tryTranscribe, 1000);
-      return;
-    }
+let isSpinnerActive = false; // Añadir esta línea al principio del script
 
+function tryTranscribe() {
+  console.log("\n");
+  const spinner = ora("Processing...").start();
+
+  return new Promise((resolve, reject) => {
     transcribeAudio("output.wav")
       .then(transcription => {
+        spinner.stop();
+
         console.log("\n");
         console.log(chalk.cyan(transcription));
         console.log("\n");
         console.log("\n");
 
         console.log(chalk.green("Transcription copied to clipboard"));
-        resolve();
+
+        console.log(chalk.green("Seleccione una opción:"));
+        console.log("1. Función A");
+        console.log("2. Función B");
+
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+
+        rl.question("Ingrese su elección (1 o 2): ", answer => {
+          if (answer === "1") {
+            functionA();
+          } else if (answer === "2") {
+            functionB();
+          } else {
+            console.log(chalk.red("Selección no válida."));
+          }
+          rl.close();
+          resolve();
+        });
       })
       .catch(err => {
-        if (err.code === "ENOENT") {
+        if (err.code === "ENOENT" && isRecordingFinished) {
+          // Reintento solo si la grabación ha terminado
+          setTimeout(tryTranscribe, 1000);
+        } else if (err.code === "ENOENT") {
           console.error(
             chalk.red(
               "Error al transcribir: El archivo no existe. Verifique que la grabación haya terminado."
@@ -121,4 +135,14 @@ function tryTranscribe() {
         reject(err);
       });
   });
+}
+
+function functionA() {
+  // Aquí va la lógica para la Función A
+  console.log("Ejecutando Función A...");
+}
+
+function functionB() {
+  // Aquí va la lógica para la Función B
+  console.log("Ejecutando Función B...");
 }
