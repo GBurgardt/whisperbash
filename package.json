@@ -2,7 +2,9 @@
   "type": "module",
   "dependencies": {
     "axios": "^1.6.2",
+    "chalk": "^5.3.0",
     "mic": "^2.1.2",
+    "ora": "^7.0.1",
     "whisper-node": "^1.1.1"
   }
 }
