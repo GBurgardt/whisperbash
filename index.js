@@ -8,6 +8,8 @@ import path from "path";
 import AudioRecorder from "./modules/audio-recorder.js";
 import AudioVisualizer from "./modules/audio-visualizer.js";
 import AudioTranscriber from "./modules/audio-transcriber.js";
+import PromptAgent from "./modules/prompt-agent.js";
+import { exec } from "child_process";
 
 // Crear una carpeta de sesión
 function createSessionFolder() {
@@ -26,6 +28,7 @@ let outputPath = path.join(sessionFolder, "audio.wav");
 let audioRecorder = new AudioRecorder(micConfig, outputPath);
 let audioVisualizer = new AudioVisualizer(Date.now());
 let audioTranscriber = new AudioTranscriber(outputPath, sessionFolder);
+const promptAgent = new PromptAgent();
 
 // Iniciar grabación y visualización
 audioRecorder.startRecording();
@@ -44,7 +47,16 @@ const rl = readline.createInterface({
 rl.on("line", async () => {
   audioRecorder.stopRecording();
   try {
-    await audioTranscriber.transcribe();
+    const result = await audioTranscriber.transcribe();
+    const improvePrompt = await promptAgent.improvePrompt({
+      prompt: result,
+    });
+    exec(`echo ${improvePrompt} | pbcopy`);
+    console.log("\n");
+    console.log(chalk.cyan(improvePrompt));
+    console.log("\n");
+    console.log(chalk.green("Transcription copied to clipboard"));
+
     process.exit(0);
   } catch (err) {
     console.error(chalk.red("Error during transcription: "), err);
