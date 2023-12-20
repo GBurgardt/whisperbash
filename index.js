@@ -32,7 +32,13 @@ const promptAgent = new PromptAgent();
 
 // Comprobar si el argumento -i está presente
 const improveFlag = process.argv.includes("-i");
-const improveFlag2 = process.argv.includes("-h");
+
+// Comprobar si el argumento -n está presente
+let numImprovements = 1; // Por defecto, solo hacemos una mejora
+const improveNumIndex = process.argv.indexOf("-n");
+if (improveNumIndex !== -1) {
+  numImprovements = parseInt(process.argv[improveNumIndex + 1]);
+}
 
 // Iniciar grabación y visualización
 audioRecorder.startRecording();
@@ -54,27 +60,12 @@ rl.on("line", async () => {
     const initialPrompt = await audioTranscriber.transcribe();
 
     if (improveFlag) {
-      const resultAgent1 = await promptAgent.improveAgent1({
-        prompt: initialPrompt,
-      });
+      let result = initialPrompt;
 
-      let result;
-
-      if (improveFlag2) {
-        console.log("imp2: ", true);
-
-        const respAgent2 = await promptAgent.improveAgent2({
-          prompt: initialPrompt,
-          respImproveAgent1: resultAgent1,
+      for (let i = 0; i < numImprovements; i++) {
+        result = await promptAgent.improveAgent1({
+          prompt: result,
         });
-
-        result = await promptAgent.improveAgent3({
-          prompt_final: respAgent2,
-          pedido_inicial: initialPrompt,
-          respuesta_inicial: resultAgent1,
-        });
-      } else {
-        result = resultAgent1;
       }
 
       exec(`echo ${result} | pbcopy`);
