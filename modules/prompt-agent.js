@@ -4,7 +4,7 @@ export class PromptAgent {
   constructor() {}
 
   // extraContext puede ser por ejemplo { name: "Codigo", value: "const a = 1; if (a === 1) { console.log('hola'); }" }
-  async improvePrompt({ prompt, extraContext }) {
+  async improveAgent1({ prompt, extraContext }) {
     const openai = new OpenAi(process.env.OPENAI_API_KEY);
     console.log("por consultar a gpt.,..");
     console.log("prompt original: ", prompt);
@@ -50,43 +50,96 @@ bien. entendido el problema qiuero que me ayudes a solucionarlo. respira. ahora,
 
     console.log("completion", completion);
     console.log(completion.choices[0]);
+
+    return completion.choices[0].message.content;
   }
 
-  //   async describeImage(img64) {
-  //     const response = await openai.chat.completions.create({
-  //       model: "gpt-4-vision-preview",
-  //       messages: [
-  //         {
-  //           role: "user",
-  //           content: [
-  //             {
-  //               type: "text",
-  //               text: `
-  // Eres un agente de inteligencia artificial especializado en el análisis estético de rostros humanos a partir de imágenes. Deberás ser capaz de examinar detalladamente los rasgos faciales, enfocándote en características como el tamaño y forma de los pómulos, barbilla, labios, nariz, y en menor medida los ojos. Deberás considerar también aspectos como la piel y el maquillaje. Tras el análisis, producirás una descripción detallada de las características observadas, presentándolas en una lista concisa y clara, donde cada atributo esté separado por comas. Por ejemplo, podrías generar descripciones como 'Pómulos prominentes, nariz aguileña, labios carnosos, piel luminosa', adaptándose a las particularidades de cada rostro analizado. Debes analizar la imagen adjunta.
-  // El formato que debes respetar es:
-  // - Imagen Input: (ver imagen adjunta)
-  // - Output: "Pómulos prominentes, nariz aguileña, labios carnosos, piel luminosa"
+  async improveAgent2({ prompt, respImproveAgent1 }) {
+    const openai = new OpenAi(process.env.OPENAI_API_KEY);
+    console.log("Agente 2: ");
+    console.log("prompt original: ", prompt);
+    console.log("respImproveAgent1: ", respImproveAgent1);
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content:
+            "Este es un ejercicio de mejora de respuestas utilizando múltiples agentes GPT. El Agente 2 recibirá el pedido inicial y la respuesta del Agente 1. Su tarea es analizar y mejorar la respuesta dada por el Agente 1, creando un prompt que será utilizado por el Agente 3 para generar una respuesta final mejora  da. Se espera que el Agente 2 sea detallista y crítico en su análisis para optimizar la calidad de la respuesta final.",
+        },
+        {
+          role: "user",
+          content: `Somos un superset de agentes gpt. Tu eres el agente 2. Sigue con atención cada frase que te digo, haciéndolo exactamente como te lo indico. Paso a paso, con cuidado, respetando cada indicación.
 
-  // Así de simple. Ahora, ¡a trabajar!
-  // - Imagen Input: (ver imagen adjunta)
-  // - Output: `,
-  //             },
-  //             {
-  //               type: "image_url",
-  //               image_url: {
-  //                 url: "https://cdn3.dorsia.es/wp-content/uploads/2023/04/28230423/famosas-operadas03.jpg",
-  //               },
-  //             },
-  //           ],
-  //         },
-  //       ],
-  //     });
+Comenzaremos recordando la situación inicial. Te presentaré el pedido inicial que se le dió inicialmente al agente 1 GPT:
+<pedido_inicial>
+${prompt}
+</pedido_inicial>
 
-  //     console.log("response", response);
-  //     console.log("response.choices", response.choices);
+Ahora, toma un momento para leerlo y asegurarte de entenderlo completamente. Respira y luego vuelve a leerlo. Excelente.
 
-  //     return response.choices[0].text;
-  //   }
+En respuesta a este pedido inicial, el agente 1 proporcionó la siguiente salida:
+<respuesta_inicial>
+${respImproveAgent1}
+</respuesta_inicial>
+
+Leamos la respuesta juntos. Asegurate de comprenderla a fondo y de hacer mentalmente un análisis crítico de su calidad.
+
+Tenemos un gran trabajo por delante para mejorarla significativamente. Tu, Agente 2, como experto en la ingeniería de prompts para agentes GPT, se te ha pedido que intervengas.
+
+Debes generar un nuevo prompt. Este nuevo prompt va a recibir como "parametros" el pedido_inicial y la respuesta_inicial. Y será un experto en mejorar la respuesta_inicial al pedido_inicial. De tal forma que el pedido_inicial sea resuelto de la mejor forma posible, mucho mejor que la respuesta_inicial inicial. Pero solo generarás el prompt que solucione esto. Será el agente 3 quien lo ejecute y genere la respuesta final. 
+Y recuerda, los inputs son:
+- pedido_inicial
+- respuesta_inicial
+El prompt que genere debe terminar de esta manera:
+- Pedido inicial: <pedido_inicial>
+- Respuesta inicial: <respuesta_inicial>
+
+De tal forma que el agente 3 pueda ejecutarlo incrustarle el pedido_inicial y la respuesta_inicial, y obtener la respuesta final.
+
+Así que empieza. Hazlo considerando todo esto que hemos hablado. Y recuerda, hazlo paso a paso, concentrándote en cada detalle, y toma un respiro cuando lo necesites.`,
+        },
+      ],
+      model: "gpt-4",
+    });
+
+    console.log("completion", completion);
+    console.log(completion.choices[0]);
+
+    return completion.choices[0].message.content;
+  }
+
+  async improveAgent3({ pedido_inicial, respuesta_inicial, prompt_final }) {
+    const openai = new OpenAi(process.env.OPENAI_API_KEY);
+
+    console.log("Agente 3: ");
+    console.log("pedido_inicial: ", pedido_inicial);
+    console.log("respuesta_inicial: ", respuesta_inicial);
+    console.log("prompt_final: ", prompt_final);
+
+    const promptFinalWithParams = prompt_final
+      .replace("<pedido_inicial>", pedido_inicial)
+      .replace("<respuesta_inicial>", respuesta_inicial);
+
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content:
+            "Este es el paso final en el proceso de mejora de respuesta con múltiples agentes GPT. El Agente 3 utilizará el prompt proporcionado por el Agente 2, el cual ya ha sido ajustado para incluir el pedido inicial y la respuesta inicial. Su objetivo es generar la respuesta final, aplicando el análisis y las mejoras sugeridas por el Agente 2. La calidad y precisión de la respuesta final es crucial, ya que representa la culminación de los esfuerzos de los agentes anteriores.",
+        },
+        {
+          role: "user",
+          content: promptFinalWithParams,
+        },
+      ],
+      model: "gpt-4",
+    });
+
+    console.log("completion", completion);
+    console.log(completion.choices[0]);
+
+    return completion.choices[0].message.content;
+  }
 }
 
 export default PromptAgent;

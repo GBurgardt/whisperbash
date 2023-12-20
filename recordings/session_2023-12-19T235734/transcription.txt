@@ -1,0 +1,1 @@
+Crea un agente que describa características de Pikachu de Pokémon.
