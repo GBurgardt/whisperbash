@@ -11,9 +11,12 @@ import AudioTranscriber from "./modules/audio-transcriber.js";
 import PromptAgent from "./modules/prompt-agent.js";
 import { exec } from "child_process";
 
+import os from "os";
+
 // Crear una carpeta de sesión
 function createSessionFolder() {
-  const sessionFolder = `recordings/session_${new Date()
+  // const sessionFolder = `recordings/session_${new Date()
+  const sessionFolder = `${os.homedir()}/recordings/session_${new Date()
     .toISOString()
     .replace(/:/g, "")
     .replace(/\..+/, "")}`;
@@ -56,33 +59,68 @@ const rl = readline.createInterface({
 
 rl.on("line", async () => {
   audioRecorder.stopRecording();
-  try {
+
+  const transcribeAndPrint = async () => {
     const initialPrompt = await audioTranscriber.transcribe();
+    let result = initialPrompt;
 
     if (improveFlag) {
-      let result = initialPrompt;
-
       for (let i = 0; i < numImprovements; i++) {
         result = await promptAgent.improveAgent1({
           prompt: result,
         });
       }
-
-      exec(`echo ${result} | pbcopy`);
-      console.log("\n");
-      console.log(chalk.cyan(result));
-    } else {
-      console.log("\n");
-      console.log(chalk.cyan(initialPrompt));
-      console.log("\n");
     }
 
-    console.log("\n");
-    console.log(chalk.green("Transcription copied to clipboard"));
+    exec(`echo ${result} | pbcopy`);
+    printResult(result);
 
+    return result;
+  };
+
+  const printResult = result => {
+    console.log("\n", chalk.cyan(result), "\n");
+    console.log(chalk.green("Transcription copied to clipboard"));
+  };
+
+  try {
+    await transcribeAndPrint();
     process.exit(0);
   } catch (err) {
     console.error(chalk.red("Error during transcription: "), err);
     process.exit(1);
   }
 });
+
+// rl.on("line", async () => {
+//   audioRecorder.stopRecording();
+//   try {
+//     const initialPrompt = await audioTranscriber.transcribe();
+
+//     if (improveFlag) {
+//       let result = initialPrompt;
+
+//       for (let i = 0; i < numImprovements; i++) {
+//         result = await promptAgent.improveAgent1({
+//           prompt: result,
+//         });
+//       }
+
+//       exec(`echo ${result} | pbcopy`);
+//       console.log("\n");
+//       console.log(chalk.cyan(result));
+//     } else {
+//       console.log("\n");
+//       console.log(chalk.cyan(initialPrompt));
+//       console.log("\n");
+//     }
+
+//     console.log("\n");
+//     console.log(chalk.green("Transcription copied to clipboard"));
+
+//     process.exit(0);
+//   } catch (err) {
+//     console.error(chalk.red("Error during transcription: "), err);
+//     process.exit(1);
+//   }
+// });
