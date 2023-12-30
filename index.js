@@ -50,6 +50,15 @@ async function main() {
 
   audioRecorder.stopRecording();
 
+  const addCodeFlag = await askQuestion(
+    "¿Quieres agregar código al final? (s/n) "
+  );
+
+  let codeToAdd = "";
+  if (addCodeFlag.toLowerCase() === "s") {
+    codeToAdd = await askQuestion("Por favor, ingresa el código: \n");
+  }
+
   const improveFlag = await askQuestion(
     "¿Quieres mejorar la transcripción? (s/n) "
   );
@@ -63,13 +72,16 @@ async function main() {
   }
 
   const transcribeAndPrint = async () => {
-    const initialPrompt = await audioTranscriber.transcribe();
-    let result = initialPrompt;
+    let result = await audioTranscriber.transcribe();
 
     if (improveFlag.toLowerCase() === "s") {
       for (let i = 0; i < numImprovements; i++) {
         result = await promptAgent.improveAgent1({ prompt: result });
       }
+    }
+
+    if (addCodeFlag.toLowerCase() === "s") {
+      result += "\n\nCódigo:\n <<<\n" + codeToAdd + "\n>>>";
     }
 
     exec(`echo ${result} | pbcopy`);
