@@ -42,11 +42,6 @@ class AudioTranscriber {
       const transcription = await this.tryTranscribe();
       spinner.stop();
 
-      console.log("\n");
-      console.log(chalk.cyan(transcription));
-      console.log("\n");
-      console.log(chalk.green("Transcription copied to clipboard"));
-
       const transcriptionPath = path.join(
         this.sessionFolder,
         "transcription.txt"

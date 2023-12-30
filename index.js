@@ -4,18 +4,16 @@ import micConfig from "./micConfig.js";
 import chalk from "chalk";
 import fs from "fs";
 import path from "path";
+import os from "os";
+import { exec } from "child_process";
 
 import AudioRecorder from "./modules/audio-recorder.js";
 import AudioVisualizer from "./modules/audio-visualizer.js";
 import AudioTranscriber from "./modules/audio-transcriber.js";
 import PromptAgent from "./modules/prompt-agent.js";
-import { exec } from "child_process";
-
-import os from "os";
 
 // Crear una carpeta de sesión
 function createSessionFolder() {
-  // const sessionFolder = `recordings/session_${new Date()
   const sessionFolder = `${os.homedir()}/recordings/session_${new Date()
     .toISOString()
     .replace(/:/g, "")
@@ -24,7 +22,6 @@ function createSessionFolder() {
   return sessionFolder;
 }
 
-// Configuración inicial
 const sessionFolder = createSessionFolder();
 let outputPath = path.join(sessionFolder, "audio.wav");
 
@@ -33,42 +30,45 @@ let audioVisualizer = new AudioVisualizer(Date.now());
 let audioTranscriber = new AudioTranscriber(outputPath, sessionFolder);
 const promptAgent = new PromptAgent();
 
-// Comprobar si el argumento -i está presente
-const improveFlag = process.argv.includes("-i");
-
-// Comprobar si el argumento -n está presente
-let numImprovements = 1; // Por defecto, solo hacemos una mejora
-const improveNumIndex = process.argv.indexOf("-n");
-if (improveNumIndex !== -1) {
-  numImprovements = parseInt(process.argv[improveNumIndex + 1]);
-}
-
-// Iniciar grabación y visualización
-audioRecorder.startRecording();
-console.log(chalk.green("Recording... "));
-
-audioRecorder.getAudioStream().on("data", function (data) {
-  audioVisualizer.visualizeAudio(data);
-});
-
-// Manejo de la entrada del usuario para detener la grabación
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-rl.on("line", async () => {
+function askQuestion(query) {
+  return new Promise(resolve => rl.question(query, resolve));
+}
+
+async function main() {
+  audioRecorder.startRecording();
+
+  audioRecorder.getAudioStream().on("data", function (data) {
+    audioVisualizer.visualizeAudio(data);
+  });
+
+  await askQuestion("Presiona Enter para detener la grabación... \n");
+
   audioRecorder.stopRecording();
+
+  const improveFlag = await askQuestion(
+    "¿Quieres mejorar la transcripción? (s/n) "
+  );
+  let numImprovements = 1;
+
+  if (improveFlag.toLowerCase() === "s") {
+    const num = await askQuestion(
+      "¿Cuántas veces quieres mejorar la transcripción? "
+    );
+    numImprovements = parseInt(num) || 1;
+  }
 
   const transcribeAndPrint = async () => {
     const initialPrompt = await audioTranscriber.transcribe();
     let result = initialPrompt;
 
-    if (improveFlag) {
+    if (improveFlag.toLowerCase() === "s") {
       for (let i = 0; i < numImprovements; i++) {
-        result = await promptAgent.improveAgent1({
-          prompt: result,
-        });
+        result = await promptAgent.improveAgent1({ prompt: result });
       }
     }
 
@@ -79,48 +79,16 @@ rl.on("line", async () => {
   };
 
   const printResult = result => {
-    console.log("\n", chalk.cyan(result), "\n");
-    console.log(chalk.green("Transcription copied to clipboard"));
+    console.log(chalk.cyan(result));
   };
 
   try {
     await transcribeAndPrint();
     process.exit(0);
   } catch (err) {
-    console.error(chalk.red("Error during transcription: "), err);
+    console.error(chalk.red("Error durante la transcripción: "), err);
     process.exit(1);
   }
-});
+}
 
-// rl.on("line", async () => {
-//   audioRecorder.stopRecording();
-//   try {
-//     const initialPrompt = await audioTranscriber.transcribe();
-
-//     if (improveFlag) {
-//       let result = initialPrompt;
-
-//       for (let i = 0; i < numImprovements; i++) {
-//         result = await promptAgent.improveAgent1({
-//           prompt: result,
-//         });
-//       }
-
-//       exec(`echo ${result} | pbcopy`);
-//       console.log("\n");
-//       console.log(chalk.cyan(result));
-//     } else {
-//       console.log("\n");
-//       console.log(chalk.cyan(initialPrompt));
-//       console.log("\n");
-//     }
-
-//     console.log("\n");
-//     console.log(chalk.green("Transcription copied to clipboard"));
-
-//     process.exit(0);
-//   } catch (err) {
-//     console.error(chalk.red("Error during transcription: "), err);
-//     process.exit(1);
-//   }
-// });
+main();
